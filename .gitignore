@@ -1,0 +1,11 @@
+.env
+compose.override.yaml
+*.log
+__pycache__/
+*.pyc
+
+# NOTE: data/ is deliberately NOT ignored. Curated and vendored files are the
+# spec; machine-owned artefacts are listed individually instead.
+data/*.tmp
+data/series.json
+data/updater-state.json
