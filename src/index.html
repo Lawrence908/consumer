@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Is the Consumer Holding Up? What They Say Against What They Do</title>
+<meta name="description" content="Consumer sentiment slumps often and sometimes wrongly; real spending has contracted year over year only five times in seven decades, always after the recession began. Michigan sentiment since 1952 with every slump scored, real consumption since 1960 with every contraction's lag computed, plus income, the saving rate, and Canada.">
+<link rel="stylesheet" href="/shared-footer/footer.css">
+<style>
+:root {
+  color-scheme: light;
+  --surface-1: #fcfcfb;
+  --plane: #f9f9f7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #4a3aa7;
+  --tooltip-bg: rgba(252,252,251,0.97);
+  --warn: #b3541e;
+  --band-alpha: 0.09;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --plane: #0d0d0d;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #9085e9;
+    --tooltip-bg: rgba(26,26,25,0.97);
+    --warn: #e08a4f;
+    --band-alpha: 0.13;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-1: #1a1a19;
+  --plane: #0d0d0d;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255,255,255,0.10);
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #9085e9;
+  --tooltip-bg: rgba(26,26,25,0.97);
+  --warn: #e08a4f;
+  --band-alpha: 0.13;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--plane);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 32px 20px 8px; }
+
+header h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.02em; }
+header p.sub { margin: 0; color: var(--text-secondary); max-width: 68ch; }
+.chip {
+  display: inline-flex; align-items: baseline; gap: 8px; margin-top: 16px;
+  padding: 5px 12px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface-1); font-size: 0.82rem; color: var(--text-secondary);
+}
+.chip[hidden] { display: none; }
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--series-3); flex: none; align-self: center; }
+.chip[data-state="signal"] .dot { background: var(--series-2); }
+.chip b { color: var(--text-primary); font-weight: 650; }
+.stamp { margin-top: 10px; font-size: 0.82rem; color: var(--muted); }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 24px 0 8px; }
+.tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.tile .label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); display: flex; align-items: center; gap: 7px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.tile .value { font-size: 1.85rem; font-weight: 650; letter-spacing: -0.02em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.tile .note { font-size: 0.8rem; color: var(--text-secondary); }
+
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 18px 18px 14px; margin: 16px 0; }
+.card h2 { font-size: 1.05rem; margin: 0 0 2px; letter-spacing: -0.01em; }
+.card p.cap { margin: 0 0 12px; font-size: 0.85rem; color: var(--text-secondary); max-width: 90ch; }
+
+.duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 12px; }
+.group { display: flex; gap: 4px; flex-wrap: wrap; }
+.group .glabel { font-size: 0.78rem; color: var(--muted); align-self: center; margin-right: 4px; }
+button.seg {
+  font: inherit; font-size: 0.82rem; padding: 5px 11px; cursor: pointer;
+  background: transparent; color: var(--text-secondary);
+  border: 1px solid var(--border); border-radius: 999px;
+}
+button.seg:hover { background: var(--grid); }
+button.seg[aria-pressed="true"] { background: var(--text-primary); color: var(--surface-1); border-color: var(--text-primary); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 8px; font-size: 0.85rem; color: var(--text-secondary); }
+.legend span.item { display: flex; align-items: center; gap: 7px; }
+.legend .swatch { width: 14px; height: 3px; border-radius: 2px; }
+.legend .swatch.dashed { background: none !important; border-top: 3px dashed; width: 14px; height: 0; border-radius: 0; }
+.legend .swatch.band { width: 14px; height: 10px; border: 1px solid var(--border); }
+
+.plot { position: relative; width: 100%; }
+canvas { display: block; width: 100%; touch-action: pan-y; }
+.tooltip {
+  position: absolute; pointer-events: none; opacity: 0; transition: opacity .08s;
+  background: var(--tooltip-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; font-size: 0.8rem; line-height: 1.45; white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.14); z-index: 5; color: var(--text-primary);
+}
+.tooltip .tdate { color: var(--muted); font-size: 0.74rem; margin-bottom: 3px; }
+.tooltip .trow { display: flex; align-items: center; gap: 7px; }
+.tooltip .tval { font-variant-numeric: tabular-nums; margin-left: auto; padding-left: 14px; font-weight: 600; }
+
+.status { color: var(--text-secondary); font-size: 0.9rem; padding: 40px 0; text-align: center; }
+
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--grid); }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+td .tag { color: var(--muted); font-size: 0.78rem; }
+tr.running td { background: rgba(235,104,52,0.06); }
+.tablewrap { overflow-x: auto; }
+
+.prose { font-size: 0.92rem; color: var(--text-secondary); }
+.prose h3 { font-size: 0.95rem; color: var(--text-primary); margin: 18px 0 6px; }
+.prose ul { padding-left: 20px; margin: 6px 0; }
+.prose li { margin-bottom: 7px; }
+.prose a { color: var(--series-1); }
+.prose code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.88em; background: var(--plane); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
+
+/* A figure the data could not supply renders as a visible gap, never as a
+   silently vanished number. */
+[data-tok] { font-variant-numeric: tabular-nums; }
+.tok-missing { color: var(--warn); border-bottom: 1px dashed var(--warn); }
+
+/* The hub footer is styled by /shared-footer/footer.css, linked above and
+   served by Caddy's shared_footer snippet. Deliberately not restyled here. */
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Is the Consumer Holding Up?</h1>
+    <p class="sub">The consumer is roughly two-thirds of the economy, and the interesting thing about consumers is that what they say and what they do come apart. Sentiment slumps often, sometimes deeply, and sometimes for no recession at all. Real spending almost never falls: it has contracted year over year <span data-tok="con_total">…</span> times since 1960, and every single one began after the recession had already started. This page computes both tables and prints both rules. Nothing here is a forecast.</p>
+    <p class="chip" id="chip" hidden></p>
+    <p class="stamp" id="stamp">Loading data…</p>
+  </header>
+
+  <div class="tiles" id="tiles"></div>
+
+  <section class="card">
+    <h2>What they say: Michigan consumer sentiment since 1952</h2>
+    <p class="cap">The longest continuous read on the American mood, index 1966-Q1 = 100. Quarterly until 1977 and monthly from 1978, drawn as published with no interpolation across the early gaps. Blue shading is NBER recessions; the toggle adds the computed slump episodes from the table below, so the chart and the table are the same object.</p>
+    <div class="controls">
+      <div class="group" role="group" aria-label="Overlays">
+        <span class="glabel">Overlay</span>
+        <button class="seg" data-toggle="slumps" aria-pressed="false">Computed slumps</button>
+        <button class="seg" data-toggle="expect" aria-pressed="false">Inflation expected</button>
+      </div>
+    </div>
+    <div class="legend" id="legend-main"></div>
+    <div class="plot"><canvas id="c-main" height="380"></canvas><div class="tooltip" id="t-main"></div></div>
+    <p class="status" id="status">Fetching seventy-four years of mood…</p>
+  </section>
+
+  <section class="card">
+    <h2>Every sentiment slump, scored</h2>
+    <p class="cap" id="rule-cap">Computed from the survey on every refresh, never hand-maintained. <span data-tok="rule_statement">…</span></p>
+    <div class="tablewrap"><table id="slump-tbl">
+      <thead><tr><th>Confidence peak</th><th>Slump began</th><th>Bottom</th><th>Depth</th><th>Months</th><th>Recession began</th><th>Lead from peak</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <div class="prose" style="margin:12px 0 0">
+      <p>The finding, computed: <span data-tok="slump_episodes">…</span> slumps in seventy-four years. The confidence peak is the useful clock, leading the recessions it caught by a median <span data-tok="slump_median_peak">…</span> months, while the slump itself is roughly coincident at a median <span data-tok="slump_median_slump">…</span> months. Both halves of the reputation show up here. Sentiment cried wolf <span data-tok="slump_fp">…</span> times with no recession inside the window (<span data-tok="slump_fp_years">…</span>), and it slept through <span data-tok="slump_uncredited_n">…</span> recession entirely (<span data-tok="slump_uncredited">…</span>), when the mood barely moved at all. A rule that scores every recession correctly and never false-alarms would be a rule fitted to the answer; this one is printed above so you can see what it does and does not catch.</p>
+      <p><strong>The newest row, <span data-tok="newest_label">…</span></strong>: <span data-tok="newest_row">…</span></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>What they do: real spending since 1960</h2>
+    <p class="cap">Year-over-year growth of real personal consumption and of real retail sales. This is the same question asked of behaviour rather than opinion, and the shape is completely different: a line that mostly sits above zero, dipping below it only in the genuine breaks. The heavy rule is zero.</p>
+    <div class="legend" id="legend-do"></div>
+    <div class="plot"><canvas id="c-do" height="340"></canvas><div class="tooltip" id="t-do"></div></div>
+    <h2 style="margin-top:20px">When spending actually fell</h2>
+    <p class="cap"><span data-tok="contraction_rule">…</span></p>
+    <div class="tablewrap"><table id="con-tbl">
+      <thead><tr><th>Contraction began</th><th>Ended</th><th>Months</th><th>Deepest</th><th>Recession peak</th><th>Lag</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <p class="prose" style="margin:10px 0 0">That is the whole table. <span data-tok="con_total">…</span> episodes in <span data-tok="con_years">…</span> years, <span data-tok="con_months_total">…</span> months of falling real consumption out of <span data-tok="con_months_covered">…</span>, or <span data-tok="con_share">…</span> percent of the record. All <span data-tok="con_attached">…</span> attach to a recession, and <span data-tok="con_after">…</span> of <span data-tok="con_attached">…</span> began after that recession had already started, at a median lag of <span data-tok="con_median">…</span> months. The consumer breaks last. Set that against the table above it: the mood has collapsed <span data-tok="slump_episodes">…</span> times, the spending <span data-tok="con_total">…</span>. Everything between those two numbers is the gap this page exists to show.</p>
+  </section>
+
+  <section class="card">
+    <h2>Income and the buffer</h2>
+    <p class="cap">Spending has to come from somewhere. Real disposable income is what arrives; the saving rate is the cushion between what arrives and what goes out. When the saving rate falls, spending is running ahead of income, which is a thing that can continue for a long time and not forever.</p>
+    <div class="legend" id="legend-inc"></div>
+    <div class="plot"><canvas id="c-inc" height="320"></canvas><div class="tooltip" id="t-inc"></div></div>
+    <p class="prose" style="margin:10px 0 0">Latest: real disposable income growing <span data-tok="inc_yoy">…</span> percent year over year while real consumption grows <span data-tok="pce_yoy">…</span> percent, with the saving rate at <span data-tok="save_rate">…</span> percent. That rate sits in the bottom <span data-tok="save_pct">…</span> percent of every month since 1959. Households saved double digits through the 1960s and 1970s; the buffer today is a fraction of that, which is the honest caveat under every reassuring spending number on this page.</p>
+  </section>
+
+  <section class="card">
+    <h2>Canada: the deep anchor</h2>
+    <p class="cap">Household final consumption expenditure in chained 2017 dollars, quarterly since 1961, year over year. The same measure of doing as the US chart above, on the same real basis. Shading is the C.D. Howe Institute chronology.</p>
+    <div class="legend" id="legend-ca"></div>
+    <div class="plot"><canvas id="c-ca" height="300"></canvas><div class="tooltip" id="t-ca"></div></div>
+  </section>
+
+  <section class="card">
+    <h2>Canada: a survey redesign, drawn rather than hidden</h2>
+    <p class="cap">Canadian retail trade comes in two pieces. The old survey ran monthly from 1991 and was terminated in December 2022; its replacement starts in January 2017 and is live. They overlap for six years and disagree by about <span data-tok="ca_retail_gap">…</span> percent on the same months, because the survey was redesigned. Both are drawn in full, overlap and all. Splicing them would invent a jump that never happened, and the seam is more informative than a smooth line would be.</p>
+    <div class="legend" id="legend-caret"></div>
+    <div class="plot"><canvas id="c-caret" height="300"></canvas><div class="tooltip" id="t-caret"></div></div>
+  </section>
+
+  <section class="card">
+    <h2>What Canadians say, as far as anyone can tell for free</h2>
+    <p class="cap"><strong>A stated gap:</strong> there is no free Canadian equivalent of the Michigan index. The Conference Board of Canada's consumer confidence series is paywalled and is not reproduced here. The closest keyless public survey of Canadian consumers is the Bank of Canada's quarterly expectations survey, which asks about prices rather than confidence. It is a narrower instrument and it only starts in 2014, so the Canadian say-side of this page is genuinely thinner than the American one. That is a fact about the data, not a design choice, and the honest move is to say so rather than to substitute something and imply it is the same thing.</p>
+    <div class="legend" id="legend-exp"></div>
+    <div class="plot"><canvas id="c-exp" height="300"></canvas><div class="tooltip" id="t-exp"></div></div>
+    <p class="prose" style="margin:10px 0 0">Canadians expect <span data-tok="ca_exp_1y">…</span> percent inflation over the coming year, against <span data-tok="us_exp_1y">…</span> percent for Americans on the Michigan survey. Both surveys have run above measured CPI for most of their overlap, which is a well-documented property of asking people about prices and not a sign that either survey is broken.</p>
+  </section>
+
+  <section class="card">
+    <h2>Revisions to published history</h2>
+    <p class="cap" id="rev-cap">Checking…</p>
+    <div class="tablewrap" id="rev-wrap" style="display:none"><table id="rev-tbl">
+      <thead><tr><th>Observed</th><th>Series</th><th>Values changed</th><th>Span</th><th>Largest change</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <p class="prose" style="margin:10px 0 0"><strong>Expect this card to be busy.</strong> Retail sales are published as an advance estimate and revised twice; personal income and consumption are revised every month and benchmarked once a year, when several years of history can move at once. Sentiment is a survey and does not restate. Every refresh is diffed against the one before it, and any change to an already-published value is recorded here rather than silently overwritten.</p>
+  </section>
+
+  <section class="card">
+    <h2>Sources and construction</h2>
+    <div class="prose" style="margin-top:6px">
+      <h3>United States</h3>
+      <ul>
+        <li><strong>What they say</strong>: University of Michigan consumer sentiment <a href="https://fred.stlouisfed.org/series/UMCSENT">UMCSENT</a>, index 1966-Q1 = 100, from November 1952. The survey ran quarterly until 1977 and monthly from January 1978; the historical quarterly portion also ships separately as <a href="https://fred.stlouisfed.org/series/UMCSENT1">UMCSENT1</a> so the cadence change is visible in the data rather than only asserted in a footnote. Expected inflation is <a href="https://fred.stlouisfed.org/series/MICH">MICH</a>, monthly from 1978.</li>
+        <li><strong>What they do</strong>: real personal consumption as the index <a href="https://fred.stlouisfed.org/series/DPCERA3M086SBEA">DPCERA3M086SBEA</a>, monthly from January 1959. The monthly real PCE <em>level</em> series (PCEC96) only begins in 2007, so the index is the deep record; index and level give identical year-over-year arithmetic, and the quarterly chained level <a href="https://fred.stlouisfed.org/series/PCECC96">PCECC96</a> reaches 1947-Q1 and ships for context. Retail is <a href="https://fred.stlouisfed.org/series/RRSFS">RRSFS</a> (real) and <a href="https://fred.stlouisfed.org/series/RSAFS">RSAFS</a> (nominal), both from 1992.</li>
+        <li><strong>The buffer</strong>: real disposable personal income <a href="https://fred.stlouisfed.org/series/DSPIC96">DSPIC96</a> and the personal saving rate <a href="https://fred.stlouisfed.org/series/PSAVERT">PSAVERT</a>, monthly from 1959.</li>
+        <li>Year-over-year series are computed here from the levels in the same payload; nothing is deflated on this site, since every real series arrives real from its publisher.</li>
+        <li><strong>Recession bands</strong>: NBER dates via <a href="https://fred.stlouisfed.org/series/USREC">USREC</a>, from the shared dataset.</li>
+      </ul>
+      <h3>Canada</h3>
+      <ul>
+        <li><strong>The anchor</strong>: household final consumption expenditure, chained 2017 dollars, seasonally adjusted at annual rates, StatCan table <a href="https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610010401">36-10-0104-01</a>, vector v62305724, quarterly from 1961-Q1 and live. The vector's English title is verified against the live table on every fetch, so a renumbered vector fails loudly instead of returning someone else's numbers.</li>
+        <li><strong>Retail, both halves</strong>: table <a href="https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010000801">20-10-0008-01</a> (vector v52367097) is <em>inactive</em>, running January 1991 to December 2022; its successor table <a href="https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010005601">20-10-0056-01</a> (vector v1446859483) starts January 2017 and is current. Both are fetched, both are drawn, and the six-year overlap is shown rather than spliced.</li>
+        <li><strong>What they say</strong>: Bank of Canada <a href="https://www.bankofcanada.ca/publications/canadian-survey-of-consumer-expectations/">Canadian Survey of Consumer Expectations</a> via Valet, one-year expectations, past-year perceptions and five-year expectations, quarterly from 2014-Q4. No free Canadian consumer confidence index exists; the Conference Board of Canada's is paywalled and is not reproduced. The gap is stated on the card above rather than papered over.</li>
+        <li><strong>Recession bands</strong>: <a href="https://www.cdhowe.org/wp-content/uploads/2024/12/Commentary_366_0-2.pdf">C.D. Howe Institute Business Cycle Council</a> chronology, from the shared dataset.</li>
+      </ul>
+      <h3>Plumbing</h3>
+      <ul>
+        <li>FRED is fetched keyless-first (public CSV), keyed API as fallback; StatCan WDS and Bank of Canada Valet have no keys. A failed fetch carries the stored series forward and says so.</li>
+        <li>Refreshes daily via cron. Sentiment lands twice a month (preliminary and final), retail mid-month, income and consumption near month end, and the Canadian quarterly series on StatCan's and the Bank's own schedules. Most runs verify rather than change; the stamp at the top says when the data last moved.</li>
+        <li>Both rules were tuned once against the canonical record at build time and then frozen. They ship inside the payload and are printed above their tables, because a different rule gives a different table and you should be able to see which one produced these.</li>
+        <li>Series follow the shared <code>econ-core</code> contract used across <a href="https://credit.chrislawrence.ca">credit</a>, <a href="https://lending.chrislawrence.ca">lending</a>, <a href="https://housing.chrislawrence.ca">housing</a>, <a href="https://yield.chrislawrence.ca">yield</a>, <a href="https://freight.chrislawrence.ca">freight</a>, <a href="https://jobs.chrislawrence.ca">jobs</a>, <a href="https://debt.chrislawrence.ca">debt</a> and <a href="https://diesel.chrislawrence.ca">diesel</a>.</li>
+        <li>Raw data: <a href="/api/data">/api/data</a>, or the files under <a href="/data/series.json">/data/</a>.</li>
+        <li>Assembled with Claude (Anthropic). Published surveys and published aggregates, with computed history and both rules printed; no forecasts.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<footer class="chrislawrence-footer">
+  <a href="https://chrislawrence.ca" class="footer-home-link" aria-label="Back to chrislawrence.ca">
+    <img src="/shared-footer/logo-portrait.png" alt="Chris Lawrence" class="footer-logo"
+         width="32" height="32" loading="lazy" onerror="this.remove()">
+    <span class="footer-home-link-text">Back to chrislawrence.ca</span>
+  </a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var YEAR = 365.25 * 86400000;
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  var state = { p: null, showSlumps: false, showExpect: false };
+
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function rgba(hex, a) {
+    var n = parseInt(hex.replace("#", ""), 16);
+    return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")";
+  }
+  function ms(iso) { return Date.parse(iso + "T00:00:00Z"); }
+  function pts(entry) { return entry.obs.map(function (o) { return [ms(o[0]), o[1]]; }); }
+  function monthWord(ym) { var q = ym.split("-"); return MONTHS[+q[1] - 1] + " " + q[0]; }
+  function monthEnd(ym) { var q = ym.split("-"); return Date.UTC(+q[0], +q[1], 1) - 86400000; }
+
+  function fmtIdx(v) { return v === null ? "—" : v.toFixed(1); }
+  function fmtPct1(v) { return v === null ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1) + "%"; }
+  function fmtPct1v(v) { return v === null ? "—" : v.toFixed(1) + "%"; }
+  function fmtBn(v) { return v === null ? "—" : "$" + (v / 1e6).toFixed(1) + "B"; }
+
+  function niceTicks(lo, hi, target) {
+    var span = hi - lo; if (span <= 0) span = 1;
+    var raw = span / target;
+    var mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    var norm = raw / mag;
+    var step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10) * mag;
+    var ticks = [];
+    for (var k = Math.ceil(lo / step); k * step <= hi + step * 0.001; k++) {
+      ticks.push(Math.round(k * step * 1e6) / 1e6);
+    }
+    return ticks;
+  }
+
+  // ------------------------------------------------------------------
+  // Time-scaled canvas chart: mixed frequencies, shaded bands, dashed
+  // segments, crosshair tooltip. Shared engine, same as the sibling sites.
+  // ------------------------------------------------------------------
+  function TimeChart(canvasId, tooltipId, opts) {
+    this.canvas = document.getElementById(canvasId);
+    this.tip = document.getElementById(tooltipId);
+    this.opts = opts || {};
+    this.hover = null;
+    this.h = parseInt(this.canvas.getAttribute("height"), 10) || 300;
+    var self = this;
+    this.canvas.addEventListener("mousemove", function (e) { self.onMove(e.clientX); });
+    this.canvas.addEventListener("mouseleave", function () { self.clearHover(); });
+    this.canvas.addEventListener("touchmove", function (e) { if (e.touches[0]) self.onMove(e.touches[0].clientX); }, { passive: true });
+    this.canvas.addEventListener("touchend", function () { self.clearHover(); });
+    this.canvas.addEventListener("touchcancel", function () { self.clearHover(); });
+  }
+
+  TimeChart.prototype.clearHover = function () { this.hover = null; this.tip.style.opacity = 0; this.draw(); };
+
+  TimeChart.prototype.setData = function (series, bands) {
+    this.series = series.filter(function (s) { return s.points.length; });
+    this.bands = bands || [];
+    var union = [];
+    this.series.forEach(function (s) {
+      s.medGap = medianGap(s.points);
+      s.points.forEach(function (pt) { union.push(pt[0]); });
+    });
+    union.sort(function (a, b) { return a - b; });
+    this.union = union.filter(function (v, i) { return i === 0 || v !== union[i - 1]; });
+    this.hover = null;
+    this.draw();
+  };
+
+  function medianGap(points) {
+    if (points.length < 2) return YEAR;
+    var gaps = [];
+    for (var i = 1; i < points.length; i++) gaps.push(points[i][0] - points[i - 1][0]);
+    gaps.sort(function (a, b) { return a - b; });
+    return gaps[Math.floor(gaps.length / 2)];
+  }
+
+  function nearest(points, t) {
+    var lo = 0, hi = points.length - 1;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (points[mid][0] < t) lo = mid + 1; else hi = mid; }
+    if (lo > 0 && Math.abs(points[lo - 1][0] - t) < Math.abs(points[lo][0] - t)) lo -= 1;
+    return lo;
+  }
+
+  TimeChart.prototype.onMove = function (clientX) {
+    if (!this.geom || !this.union || !this.union.length) return;
+    var rect = this.canvas.getBoundingClientRect();
+    var g = this.geom;
+    var t = this.x0 + (clientX - rect.left - g.left) / (g.right - g.left) * (this.x1 - this.x0);
+    var k = nearest(this.union.map(function (v) { return [v, 0]; }), t);
+    var snapped = this.union[Math.max(0, Math.min(this.union.length - 1, k))];
+    if (snapped === this.hover) return;
+    this.hover = snapped;
+    this.draw();
+    this.showTip(snapped, rect);
+  };
+
+  TimeChart.prototype.showTip = function (t, rect) {
+    var monthly = true;
+    this.series.forEach(function (s) { if (s.medGap < 20 * 86400000) monthly = false; });
+    var html = '<div class="tdate">' + new Date(t).toISOString().slice(0, monthly ? 7 : 10) + "</div>";
+    var shown = 0;
+    this.series.forEach(function (s) {
+      var i = nearest(s.points, t);
+      var pt = s.points[i];
+      if (Math.abs(pt[0] - t) > s.medGap * 0.75) return;
+      html += '<div class="trow"><span class="swatch" style="background:' + css(s.color) + '"></span>' +
+              s.name + '<span class="tval">' + (s.fmt || fmtIdx)(pt[1]) + "</span></div>";
+      shown++;
+    });
+    if (!shown) { this.tip.style.opacity = 0; return; }
+    this.tip.innerHTML = html;
+    this.tip.style.opacity = 1;
+    var g = this.geom;
+    var px = g.left + (t - this.x0) / (this.x1 - this.x0) * (g.right - g.left);
+    var w = this.tip.offsetWidth;
+    var left = px + 14;
+    if (left + w > rect.width - 4) left = px - w - 14;
+    if (left < 4) left = 4;
+    this.tip.style.left = left + "px";
+    this.tip.style.top = "14px";
+  };
+
+  TimeChart.prototype.draw = function () {
+    var cv = this.canvas, ctx = cv.getContext("2d");
+    var dpr = window.devicePixelRatio || 1;
+    var w = cv.clientWidth, h = this.h;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    cv.style.height = h + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    if (!this.series || !this.series.length) return;
+
+    var pad = { l: 48, r: 12, t: 10, b: 26 };
+    var g = { left: pad.l, right: w - pad.r, top: pad.t, bottom: h - pad.b };
+    this.geom = g;
+
+    var x0 = Infinity, x1 = -Infinity, lo = Infinity, hi = -Infinity;
+    this.series.forEach(function (s) {
+      s.points.forEach(function (pt) {
+        if (pt[0] < x0) x0 = pt[0];
+        if (pt[0] > x1) x1 = pt[0];
+        if (pt[1] !== null && isFinite(pt[1])) { if (pt[1] < lo) lo = pt[1]; if (pt[1] > hi) hi = pt[1]; }
+      });
+    });
+    if (!isFinite(lo)) return;
+    var padY = (hi - lo) * 0.08 || 1;
+    lo -= padY; hi += padY;
+    if (this.opts.includeZero && lo > 0) lo = 0;
+    if (this.opts.includeZero && hi < 0) hi = 0;
+    this.x0 = x0; this.x1 = x1;
+
+    var muted = css("--muted"), grid = css("--grid"), axis = css("--axis");
+    var X = function (t) { return g.left + (t - x0) / Math.max(1, x1 - x0) * (g.right - g.left); };
+    var Y = function (v) { return g.bottom - (v - lo) / (hi - lo) * (g.bottom - g.top); };
+
+    // bands first, behind everything
+    (this.bands || []).forEach(function (b) {
+      var s = Math.max(x0, b.start), e = Math.min(x1, b.end);
+      if (e <= s) return;
+      ctx.fillStyle = b.fill;
+      ctx.fillRect(X(s), g.top, Math.max(1, X(e) - X(s)), g.bottom - g.top);
+    });
+
+    // y grid
+    ctx.font = "11px system-ui, sans-serif";
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    var yt = niceTicks(lo, hi, 6);
+    var yFmt = this.opts.yFmt || function (v) { return String(Math.round(v * 100) / 100); };
+    yt.forEach(function (v) {
+      var y = Y(v);
+      ctx.strokeStyle = grid; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(g.left, Math.round(y) + 0.5); ctx.lineTo(g.right, Math.round(y) + 0.5); ctx.stroke();
+      ctx.fillStyle = muted;
+      ctx.fillText(yFmt(v), g.left - 8, y);
+    });
+
+    // zero line where it matters
+    if (lo < 0 && hi > 0) {
+      ctx.strokeStyle = axis; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(g.left, Math.round(Y(0)) + 0.5); ctx.lineTo(g.right, Math.round(Y(0)) + 0.5); ctx.stroke();
+    }
+
+    // x ticks: years, thinned by span
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    var firstYear = new Date(x0).getUTCFullYear();
+    var lastYear = new Date(x1).getUTCFullYear();
+    var years = lastYear - firstYear;
+    var stepY = years > 60 ? 10 : years > 30 ? 5 : years > 12 ? 2 : 1;
+    for (var yr = Math.ceil(firstYear / stepY) * stepY; yr <= lastYear; yr += stepY) {
+      var t = Date.UTC(yr, 0, 1);
+      if (t < x0 || t > x1) continue;
+      var px = X(t);
+      ctx.strokeStyle = grid; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(Math.round(px) + 0.5, g.top); ctx.lineTo(Math.round(px) + 0.5, g.bottom); ctx.stroke();
+      ctx.fillStyle = muted; ctx.fillText(String(yr), px, g.bottom + 6);
+    }
+
+    // axis baseline
+    ctx.strokeStyle = axis; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(g.left, Math.round(g.bottom) + 0.5); ctx.lineTo(g.right, Math.round(g.bottom) + 0.5); ctx.stroke();
+
+    // series
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+    var surface = css("--surface-1");
+    this.series.forEach(function (s) {
+      var color = css(s.color);
+      ctx.strokeStyle = color; ctx.lineWidth = s.width || 2;
+      ctx.setLineDash(s.dash ? [5, 4] : []);
+      ctx.beginPath();
+      var pen = false;
+      s.points.forEach(function (pt) {
+        if (pt[1] === null || !isFinite(pt[1])) { pen = false; return; }
+        var xx = X(pt[0]), yy = Y(pt[1]);
+        if (!pen) { ctx.moveTo(xx, yy); pen = true; } else { ctx.lineTo(xx, yy); }
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+
+    // crosshair + hover markers
+    if (this.hover !== null) {
+      var hx = X(this.hover);
+      ctx.strokeStyle = axis; ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(Math.round(hx) + 0.5, g.top); ctx.lineTo(Math.round(hx) + 0.5, g.bottom); ctx.stroke();
+      ctx.setLineDash([]);
+      var hoverT = this.hover;
+      this.series.forEach(function (s) {
+        var i = nearest(s.points, hoverT);
+        var pt = s.points[i];
+        if (Math.abs(pt[0] - hoverT) > s.medGap * 0.75 || pt[1] === null) return;
+        ctx.beginPath(); ctx.arc(X(pt[0]), Y(pt[1]), 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = css(s.color); ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = surface; ctx.stroke();
+      });
+    }
+  };
+
+  // ------------------------------------------------------------------
+  // assembly
+  // ------------------------------------------------------------------
+  var charts = {
+    main: new TimeChart("c-main", "t-main", { yFmt: function (v) { return String(Math.round(v)); } }),
+    do: new TimeChart("c-do", "t-do", { includeZero: true, yFmt: function (v) { return Math.round(v) + "%"; } }),
+    inc: new TimeChart("c-inc", "t-inc", { includeZero: true, yFmt: function (v) { return Math.round(v) + "%"; } }),
+    ca: new TimeChart("c-ca", "t-ca", { includeZero: true, yFmt: function (v) { return Math.round(v) + "%"; } }),
+    caret: new TimeChart("c-caret", "t-caret", { yFmt: function (v) { return "$" + Math.round(v / 1e6) + "B"; } }),
+    exp: new TimeChart("c-exp", "t-exp", { includeZero: true, yFmt: function (v) { return v.toFixed(1) + "%"; } })
+  };
+
+  function S(id) {
+    var p = state.p;
+    return (p && p.series && p.series[id]) || null;
+  }
+
+  function bandList(which, fromMs) {
+    var p = state.p, out = [];
+    if (!p || !p.recessions) return out;
+    var defs = [
+      { key: "us", set: p.recessions.us, varName: "--series-1" },
+      { key: "ca", set: p.recessions.ca, varName: "--series-2" }
+    ];
+    var alpha = parseFloat(css("--band-alpha")) || 0.09;
+    defs.forEach(function (d) {
+      if (which.indexOf(d.key) === -1 || !d.set) return;
+      d.set.bands.forEach(function (b) {
+        var start = ms(b.peak + "-01");
+        var end = monthEnd(b.trough);
+        if (end < fromMs) return;
+        out.push({ start: start, end: end, fill: rgba(css(d.varName), alpha) });
+      });
+    });
+    return out;
+  }
+
+  // The computed slump episodes drawn as bands: the table above, on the chart.
+  function slumpBands() {
+    var sl = state.p && state.p.analysis && state.p.analysis.slumps;
+    if (!sl || !sl.episodes) return [];
+    var alpha = (parseFloat(css("--band-alpha")) || 0.09) * 1.5;
+    return sl.episodes.map(function (e) {
+      return { start: ms(e.start + "-01"), end: monthEnd(e.end),
+               fill: rgba(css("--series-2"), alpha) };
+    });
+  }
+
+  function legend(elId, items) {
+    document.getElementById(elId).innerHTML = items.map(function (it) {
+      var cls = "swatch" + (it.dash ? " dashed" : "") + (it.band ? " band" : "");
+      var style = it.band
+        ? "background:" + rgba(css(it.color), parseFloat(css("--band-alpha")) * (it.strong ? 3 : 2))
+        : (it.dash ? "border-top-color:" + css(it.color) : "background:" + css(it.color));
+      return '<span class="item"><span class="' + cls + '" style="' + style + '"></span>' + it.name + "</span>";
+    }).join("");
+  }
+
+  function renderMain() {
+    var sent = S("us_sentiment"), exp = S("us_inflation_expected_1y");
+    if (!sent) return;
+    var series = [{ name: "Michigan sentiment", color: "--series-1", points: pts(sent) }];
+    if (state.showExpect && exp) {
+      series.push({ name: "Inflation expected, next year", color: "--series-3",
+                    width: 1.5, dash: true, points: pts(exp), fmt: fmtPct1v });
+    }
+    var from = pts(sent)[0][0];
+    var bands = bandList(["us"], from);
+    if (state.showSlumps) bands = bands.concat(slumpBands());
+    charts.main.setData(series, bands);
+    var items = [{ name: "Michigan consumer sentiment (1966-Q1 = 100)", color: "--series-1" }];
+    if (state.showExpect) items.push({ name: "Inflation expected, next year (dashed, percent)", color: "--series-3", dash: true });
+    items.push({ name: "US recessions (NBER)", color: "--series-1", band: true });
+    if (state.showSlumps) items.push({ name: "Computed slump episodes", color: "--series-2", band: true, strong: true });
+    legend("legend-main", items);
+  }
+
+  function renderRest() {
+    var pce = S("us_real_pce_yoy"), ret = S("us_real_retail_yoy"), nom = S("us_retail_nominal_yoy");
+    if (pce) {
+      charts.do.setData([
+        { name: "Real consumption YoY", color: "--series-1", points: pts(pce), fmt: fmtPct1 },
+        ret && { name: "Real retail YoY", color: "--series-2", width: 1.5, points: pts(ret), fmt: fmtPct1 },
+        nom && { name: "Nominal retail YoY", color: "--series-4", width: 1.2, dash: true, points: pts(nom), fmt: fmtPct1 }
+      ].filter(Boolean), bandList(["us"], pts(pce)[0][0]));
+      legend("legend-do", [
+        { name: "Real personal consumption, year over year", color: "--series-1" },
+        { name: "Real retail and food services sales", color: "--series-2" },
+        { name: "Nominal retail sales (dashed)", color: "--series-4", dash: true },
+        { name: "US recessions", color: "--series-1", band: true }
+      ]);
+    }
+
+    var inc = S("us_real_income_yoy"), save = S("us_saving_rate");
+    if (inc || save) {
+      charts.inc.setData([
+        inc && { name: "Real disposable income YoY", color: "--series-3", points: pts(inc), fmt: fmtPct1 },
+        save && { name: "Saving rate", color: "--series-4", width: 1.5, points: pts(save), fmt: fmtPct1v }
+      ].filter(Boolean), bandList(["us"], inc ? pts(inc)[0][0] : pts(save)[0][0]));
+      legend("legend-inc", [
+        { name: "Real disposable income, year over year", color: "--series-3" },
+        { name: "Personal saving rate (percent of disposable income)", color: "--series-4" },
+        { name: "US recessions", color: "--series-1", band: true }
+      ]);
+    }
+
+    var cac = S("ca_consumption_yoy");
+    if (cac) {
+      charts.ca.setData([
+        { name: "Household consumption YoY", color: "--series-2", points: pts(cac), fmt: fmtPct1 }
+      ], bandList(["ca"], pts(cac)[0][0]));
+      legend("legend-ca", [
+        { name: "Canada household final consumption, chained 2017$, year over year", color: "--series-2" },
+        { name: "Canadian recessions (C.D. Howe)", color: "--series-2", band: true }
+      ]);
+    }
+
+    var old = S("ca_retail_closed"), cur = S("ca_retail_current");
+    if (old || cur) {
+      charts.caret.setData([
+        old && { name: "Closed survey (1991-2022)", color: "--series-4", points: pts(old), fmt: fmtBn },
+        cur && { name: "Successor survey (2017 on)", color: "--series-2", points: pts(cur), fmt: fmtBn }
+      ].filter(Boolean), bandList(["ca"], old ? pts(old)[0][0] : pts(cur)[0][0]));
+      legend("legend-caret", [
+        { name: "Terminated survey, table 20-10-0008 (ends Dec 2022)", color: "--series-4" },
+        { name: "Successor survey, table 20-10-0056 (from Jan 2017)", color: "--series-2" },
+        { name: "Canadian recessions", color: "--series-2", band: true }
+      ]);
+    }
+
+    var e1 = S("ca_expect_inflation_1y"), ep = S("ca_perceived_inflation"),
+        e5 = S("ca_expect_inflation_5y"), us1 = S("us_inflation_expected_1y");
+    if (e1) {
+      var from = pts(e1)[0][0];
+      charts.exp.setData([
+        { name: "Canada, expected 1y", color: "--series-2", points: pts(e1), fmt: fmtPct1v },
+        ep && { name: "Canada, perceived past year", color: "--series-4", width: 1.5, points: pts(ep), fmt: fmtPct1v },
+        e5 && { name: "Canada, expected 5y", color: "--series-3", width: 1.5, dash: true, points: pts(e5), fmt: fmtPct1v },
+        us1 && { name: "US, expected 1y (Michigan)", color: "--series-1", width: 1.5,
+                 points: pts(us1).filter(function (pt) { return pt[0] >= from; }), fmt: fmtPct1v }
+      ].filter(Boolean), []);
+      legend("legend-exp", [
+        { name: "Canada expected, next year", color: "--series-2" },
+        { name: "Canada perceived, past year", color: "--series-4" },
+        { name: "Canada expected, five years (dashed)", color: "--series-3", dash: true },
+        { name: "US expected, next year (Michigan)", color: "--series-1" }
+      ]);
+    }
+  }
+
+  function renderAll() { renderMain(); renderRest(); }
+
+  // ------------------------------------------------------------------
+  // tokens: prose numbers render from data, never from markup
+  // ------------------------------------------------------------------
+  function fillTokens(map) {
+    document.querySelectorAll("[data-tok]").forEach(function (el) {
+      var key = el.getAttribute("data-tok");
+      if (map[key] === undefined) { el.classList.add("tok-missing"); el.textContent = "⟨" + key + "⟩"; }
+      else el.textContent = map[key];
+    });
+  }
+
+  function buildTokens(p) {
+    var map = {};
+    var an = p.analysis || {};
+    var st = an.status || {};
+
+    var sl = an.slumps || {};
+    if (sl.rule) map.rule_statement = sl.rule.statement;
+    var ss = sl.stats || {};
+    if (ss.episodes !== undefined) {
+      map.slump_episodes = String(ss.episodes);
+      map.slump_fp = String(ss.false_positives);
+      map.slump_fp_years = ss.false_positive_years.join(" and ");
+      map.slump_median_peak = String(ss.median_lead_from_peak_months);
+      map.slump_median_slump = String(ss.median_lead_from_slump_months);
+      map.slump_uncredited_n = String(ss.uncredited_recessions.length);
+      map.slump_uncredited = ss.uncredited_recessions.map(monthWord).join(", ") || "none";
+    }
+
+    var con = an.contractions || {};
+    if (con.rule) map.contraction_rule = con.rule.statement;
+    var cs = con.stats || {};
+    if (cs.total !== undefined) {
+      map.con_total = String(cs.total);
+      map.con_attached = String(cs.attached);
+      map.con_after = String(cs.began_after_recession);
+      map.con_median = String(cs.median_lag_months);
+      map.con_months_total = String(cs.months_in_contraction);
+      map.con_months_covered = String(cs.months_covered);
+      map.con_share = (cs.months_in_contraction / cs.months_covered * 100).toFixed(1);
+      map.con_years = String(Math.round(cs.months_covered / 12));
+    }
+
+    if (st.us_real_pce_yoy) map.pce_yoy = st.us_real_pce_yoy.latest[1].toFixed(1);
+    if (st.us_real_income_yoy) map.inc_yoy = st.us_real_income_yoy.latest[1].toFixed(1);
+    if (st.us_saving_rate) {
+      map.save_rate = st.us_saving_rate.latest[1].toFixed(1);
+      if (st.us_saving_rate.percentile !== undefined) map.save_pct = String(st.us_saving_rate.percentile);
+    }
+    if (st.ca_expect_inflation_1y) map.ca_exp_1y = st.ca_expect_inflation_1y.latest[1].toFixed(1);
+    if (st.us_inflation_expected_1y) map.us_exp_1y = st.us_inflation_expected_1y.latest[1].toFixed(1);
+
+    // The Canadian retail seam, measured rather than asserted: the median
+    // disagreement between the two surveys across every month they share.
+    var old = p.series && p.series.ca_retail_closed, cur = p.series && p.series.ca_retail_current;
+    if (old && cur) {
+      var oldMap = {}, diffs = [];
+      old.obs.forEach(function (o) { oldMap[o[0]] = o[1]; });
+      cur.obs.forEach(function (o) {
+        if (oldMap[o[0]] && oldMap[o[0]] > 0) diffs.push((o[1] / oldMap[o[0]] - 1) * 100);
+      });
+      if (diffs.length) {
+        diffs.sort(function (a, b) { return a - b; });
+        var mid = diffs.length >> 1;
+        var med = diffs.length % 2 ? diffs[mid] : (diffs[mid - 1] + diffs[mid]) / 2;
+        map.ca_retail_gap = med.toFixed(1);
+      }
+    }
+
+    // The newest slump renders from the computed row, so the sentence stays
+    // true when that row eventually resolves either way (the family lesson).
+    if (sl.episodes && sl.episodes.length) {
+      var n = sl.episodes[sl.episodes.length - 1];
+      map.newest_label = n.start.slice(0, 4) + (n.still_running ? " onward" : "");
+      var shape = "sentiment fell " + n.deepest_below_pct.toFixed(1) +
+        " percent below its " + monthWord(n.confidence_peak.month) + " peak of " +
+        n.confidence_peak.value.toFixed(1) + ", bottoming at " +
+        n.trough.value.toFixed(1) + " in " + monthWord(n.trough.month);
+      if (n.outcome === "pending" && n.still_running) {
+        map.newest_row = shape + ", and it is still running at the last reading. " +
+          "Its attribution window is open, so the table calls it pending rather " +
+          "than guessing. Whether it joins the false alarms or the recessions is " +
+          "not knowable yet, and this row will change on its own when it is.";
+      } else if (n.outcome === "pending") {
+        map.newest_row = shape + "; its attribution window is still open.";
+      } else if (n.outcome === "none_in_window") {
+        map.newest_row = shape + ", and no recession came within the window. " +
+          "The mood broke and the economy did not.";
+      } else if (n.outcome === "coincident") {
+        map.newest_row = shape + "; the " + monthWord(n.recessions[0]) +
+          " recession was already underway when the slump began.";
+      } else {
+        map.newest_row = shape + ", followed by the " + monthWord(n.recessions[0]) +
+          " recession " + n.lead_from_slump_months + " months later.";
+      }
+    }
+    return map;
+  }
+
+  function buildChip(p) {
+    var st = (p.analysis || {}).status || {};
+    var sent = st.us_sentiment, pce = st.us_real_pce_yoy;
+    var chip = document.getElementById("chip");
+    if (!sent) return;
+    var says = {
+      gap_open: "Sentiment slumped, spending growing",
+      both_weak: "Sentiment slumped, spending contracting",
+      spending_only: "Sentiment steady, spending contracting",
+      both_steady: "Sentiment steady, spending growing"
+    }[st.say_do] || (st.slump_active ? "Sentiment slumped" : "Sentiment steady");
+    var signal = st.say_do === "gap_open" || st.say_do === "both_weak";
+    var html = "<b>" + says + "</b> · sentiment " + sent.latest[1].toFixed(1) +
+               (pce ? " · real spending " + fmtPct1(pce.latest[1]) + " YoY" : "");
+    chip.innerHTML = '<span class="dot"></span><span>' + html + "</span>";
+    chip.setAttribute("data-state", signal ? "signal" : "normal");
+    chip.hidden = false;
+  }
+
+  function buildTiles(p) {
+    var an = p.analysis || {};
+    var st = an.status || {};
+    var t = [];
+    function month(iso) { return monthWord(iso.slice(0, 7)); }
+
+    var sent = st.us_sentiment;
+    if (sent) {
+      var note = month(sent.latest[0]) + " · bottom " + Math.ceil(sent.percentile) +
+                 "% of " + sent.observations.toLocaleString() + " readings since 1952";
+      t.push({ label: "What they say", color: "var(--series-1)",
+               value: sent.latest[1].toFixed(1), note: note });
+    }
+    if (st.us_real_pce_yoy) {
+      t.push({ label: "What they do", color: "var(--series-1)",
+               value: fmtPct1(st.us_real_pce_yoy.latest[1]),
+               note: month(st.us_real_pce_yoy.latest[0]) + " · real consumption, year over year" });
+    }
+    if (st.us_real_retail_yoy) {
+      t.push({ label: "Real retail", color: "var(--series-2)",
+               value: fmtPct1(st.us_real_retail_yoy.latest[1]),
+               note: month(st.us_real_retail_yoy.latest[0]) + " · year over year" });
+    }
+    if (st.us_saving_rate) {
+      t.push({ label: "The buffer", color: "var(--series-4)",
+               value: st.us_saving_rate.latest[1].toFixed(1) + "%",
+               note: month(st.us_saving_rate.latest[0]) + " · saving rate, bottom " +
+                     Math.ceil(st.us_saving_rate.percentile) + "% since 1959" });
+    }
+    var cs = (an.contractions || {}).stats;
+    if (cs && cs.attached) {
+      t.push({ label: "Spending breaks last", color: "var(--series-3)",
+               value: cs.began_after_recession + " of " + cs.attached,
+               note: "contractions began after the recession · median lag +" +
+                     cs.median_lag_months + " mo" });
+    }
+    document.getElementById("tiles").innerHTML = t.map(function (x) {
+      return '<div class="tile"><div class="label"><span class="swatch" style="background:' + x.color + '"></span>' + x.label +
+             '</div><div class="value">' + x.value + '</div><div class="note">' + x.note + "</div></div>";
+    }).join("");
+  }
+
+  function buildSlumps(p) {
+    var sl = p.analysis && p.analysis.slumps;
+    if (!sl || !sl.episodes) return;
+    var rows = sl.episodes.slice().reverse().map(function (e) {
+      var rec, lead;
+      if (e.recessions.length) {
+        rec = e.recessions.map(monthWord).join(" + ");
+        if (e.outcome === "coincident") rec += ' <span class="tag">(slump trailed)</span>';
+        lead = e.lead_from_peak_months === null ? "—"
+          : (e.lead_from_peak_months > 0 ? "+" : "") + e.lead_from_peak_months + " mo";
+      } else if (e.outcome === "pending") {
+        rec = "<b>none (yet)</b>"; lead = "—";
+      } else {
+        rec = 'none within window <span class="tag">(false alarm)</span>'; lead = "—";
+      }
+      var peak = e.confidence_peak
+        ? monthWord(e.confidence_peak.month) + " (" + e.confidence_peak.value.toFixed(1) + ")"
+        : '<span class="tag">left-censored (survey starts here)</span>';
+      var ended = e.still_running ? '<span class="tag">running</span>' : monthWord(e.end);
+      return '<tr' + (e.still_running ? ' class="running"' : '') + "><td>" + peak +
+             "</td><td>" + monthWord(e.start) + " to " + ended +
+             "</td><td>" + e.trough.value.toFixed(1) + " (" + monthWord(e.trough.month) + ")" +
+             "</td><td>−" + e.deepest_below_pct.toFixed(1) + "%" +
+             "</td><td>" + e.months_span +
+             "</td><td>" + rec + "</td><td>" + lead + "</td></tr>";
+    });
+    document.querySelector("#slump-tbl tbody").innerHTML = rows.join("");
+  }
+
+  function buildContractions(p) {
+    var con = p.analysis && p.analysis.contractions;
+    if (!con || !con.contractions) return;
+    var rows = con.contractions.slice().reverse().map(function (c) {
+      var peak = c.recession_peak
+        ? monthWord(c.recession_peak)
+        : '<span class="tag">none within 2y</span>';
+      var lag = c.lag_months === null ? "—"
+        : (c.lag_months > 0 ? "+" : "") + c.lag_months + " mo";
+      return "<tr><td>" + monthWord(c.start) + "</td><td>" + monthWord(c.end) +
+             "</td><td>" + c.months + "</td><td>" + fmtPct1(c.deepest.value) +
+             " (" + monthWord(c.deepest.month) + ")</td><td>" + peak +
+             "</td><td>" + lag + "</td></tr>";
+    });
+    document.querySelector("#con-tbl tbody").innerHTML = rows.join("");
+  }
+
+  function buildRevisions(log) {
+    var cap = document.getElementById("rev-cap");
+    var wrap = document.getElementById("rev-wrap");
+    if (!log || !log.total) {
+      cap.textContent = "No revisions to already-published observations logged yet; the first scheduled refreshes will start filling this in.";
+      return;
+    }
+    cap.textContent = log.total.toLocaleString() + " revision event" + (log.total === 1 ? "" : "s") +
+      " logged" + (log.recent.length < log.total ? " · showing the " + log.recent.length + " most recent" : "") + ".";
+    wrap.style.display = "";
+    document.querySelector("#rev-tbl tbody").innerHTML = log.recent.map(function (r) {
+      return "<tr><td>" + (r.observed_at || "").slice(0, 10) + "</td><td>" + (r.series || "") +
+             "</td><td>" + (r.changed || "") + "</td><td>" + ((r.span || []).join(" to ")) +
+             "</td><td>" + (r.max_delta === undefined ? "—" : r.max_delta) + "</td></tr>";
+    }).join("");
+  }
+
+  // ------------------------------------------------------------------
+  // wiring
+  // ------------------------------------------------------------------
+  document.querySelectorAll("[data-toggle]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var key = b.getAttribute("data-toggle");
+      if (key === "slumps") state.showSlumps = !state.showSlumps;
+      else state.showExpect = !state.showExpect;
+      b.setAttribute("aria-pressed",
+        (key === "slumps" ? state.showSlumps : state.showExpect) ? "true" : "false");
+      renderMain();
+    });
+  });
+
+  var resizeTimer;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () { Object.keys(charts).forEach(function (k) { charts[k].draw(); }); }, 120);
+  });
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    (mq.addEventListener ? mq.addEventListener.bind(mq, "change") : mq.addListener.bind(mq))(renderAll);
+  }
+
+  fetch("/api/data", { cache: "no-cache" })
+    .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function (p) {
+      state.p = p;
+      document.getElementById("status").style.display = "none";
+
+      var count = 0, obsTotal = 0, key;
+      for (key in p.series) { count++; obsTotal += p.series[key].obs.length; }
+      var sent = S("us_sentiment");
+      document.getElementById("stamp").textContent =
+        count + " series · " + obsTotal.toLocaleString() + " observations · sentiment through " +
+        (sent ? sent.as_of.slice(0, 7) : "—") + " · refreshed " +
+        (p.series_fetched_at || "").slice(0, 10) + " · built __BUILD_TIME__";
+
+      fillTokens(buildTokens(p));
+      buildChip(p);
+      buildTiles(p);
+      buildSlumps(p);
+      buildContractions(p);
+      buildRevisions(p.changelog);
+      renderAll();
+    })
+    .catch(function (e) {
+      document.getElementById("status").textContent = "Could not load the data (" + e.message + "). The updater may be briefly unavailable; try a reload in a minute.";
+    });
+})();
+</script>
+</body>
+</html>
