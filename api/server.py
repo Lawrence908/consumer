@@ -48,6 +48,7 @@ HTTP here is read-only. Runs happen via host cron calling
 """
 
 import json
+import math
 import os
 import sys
 import threading
@@ -399,6 +400,28 @@ def _median(values):
             else (ordered[mid - 1] + ordered[mid]) / 2.0)
 
 
+# The chip's own rule: SLUMP_RULE's threshold without the sustain and merge
+# conditions, which date completed episodes rather than describe today.
+CHIP_RULE = ("The slump signal is on when the average of the last three "
+             "sentiment readings sits 15 percent or more below its best such "
+             "average over the prior two years. The label names the say-do "
+             "gap: which of the two halves, what they say and what they do, "
+             "is currently weak.")
+
+SAY_DO_LABELS = {
+    "gap_open": "Sentiment slumped, spending growing",
+    "both_weak": "Sentiment slumped, spending contracting",
+    "spending_only": "Sentiment steady, spending contracting",
+    "both_steady": "Sentiment steady, spending growing",
+}
+
+
+def _signed(value, places=1):
+    """The page's sign convention: U+2212 for negatives, never a hyphen."""
+    sign = "+" if value > 0 else ("−" if value < 0 else "")
+    return "%s%.*f%%" % (sign, places, abs(value))
+
+
 def build_status(series):
     """The launch posture, computed. The say-do gap is two booleans and the
     numbers behind them; the chip renders from these tokens."""
@@ -463,6 +486,28 @@ def build_status(series):
             status["say_do"] = "spending_only"
         else:
             status["say_do"] = "both_steady"
+
+    # The status block the hub reads. This page's state is the say-do gap
+    # itself rather than either series alone, so the label names the gap and
+    # signal means the two halves disagree: a mood that has broken while the
+    # spending has not is exactly the condition worth surfacing.
+    sent_status = status.get("us_sentiment")
+    if sent_status and "say_do" in status:
+        signal = status["say_do"] in ("gap_open", "both_weak")
+        detail = "sentiment %.1f (bottom %d%% since 1952)" % (
+            sent_status["latest"][1], math.ceil(sent_status["percentile"]))
+        pce = status.get("us_real_pce_yoy")
+        if pce:
+            detail += " · real spending %s year over year" % _signed(
+                pce["latest"][1])
+        status["signal_active"] = signal
+        status["headline"] = {
+            "state": "signal" if signal else "normal",
+            "label": SAY_DO_LABELS.get(status["say_do"], "Consumer"),
+            "detail": detail,
+            "as_of": sent_status["latest"][0],
+            "rule": CHIP_RULE,
+        }
     return status
 
 
@@ -856,7 +901,14 @@ def build_data_payload():
     try:
         doc = _load("series.json")
         payload["series"] = doc.get("series", {})
-        payload["analysis"] = doc.get("analysis", {})
+        # The stored block is written by the refresh, which runs out of
+        # process; one written before the status contract existed has no
+        # headline, and the chip would stay hidden until the next scheduled
+        # run. Recomputing the cheap half here makes a deploy take effect now.
+        analysis = dict(doc.get("analysis", {}))
+        if "headline" not in (analysis.get("status") or {}):
+            analysis["status"] = build_status(payload["series"])
+        payload["analysis"] = analysis
         payload["series_fetched_at"] = doc.get("fetched_at")
         payload["series_errors"] = doc.get("errors", {})
     except Exception as exc:  # noqa: BLE001 - charts degrade, page renders
@@ -896,6 +948,8 @@ class Handler(BaseHTTPRequestHandler):
                     "status": "ok",
                     "series": len(doc.get("series", {})),
                     "latest": sent.get("as_of"),
+                    "headline": st.get("headline"),
+                    "signal_active": st.get("signal_active"),
                     "say_do": st.get("say_do"),
                     "slump_active": st.get("slump_active"),
                     "errors": len(doc.get("errors", {})),

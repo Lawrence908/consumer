@@ -780,22 +780,17 @@ tr.running td { background: rgba(235,104,52,0.06); }
     return map;
   }
 
+  /* Rendered from analysis.status.headline rather than recomposed here: the
+     server owns the rule and its wording, so the hub and the page cannot
+     drift into saying different things about the same reading. */
   function buildChip(p) {
-    var st = (p.analysis || {}).status || {};
-    var sent = st.us_sentiment, pce = st.us_real_pce_yoy;
+    var head = ((p.analysis || {}).status || {}).headline;
     var chip = document.getElementById("chip");
-    if (!sent) return;
-    var says = {
-      gap_open: "Sentiment slumped, spending growing",
-      both_weak: "Sentiment slumped, spending contracting",
-      spending_only: "Sentiment steady, spending contracting",
-      both_steady: "Sentiment steady, spending growing"
-    }[st.say_do] || (st.slump_active ? "Sentiment slumped" : "Sentiment steady");
-    var signal = st.say_do === "gap_open" || st.say_do === "both_weak";
-    var html = "<b>" + says + "</b> · sentiment " + sent.latest[1].toFixed(1) +
-               (pce ? " · real spending " + fmtPct1(pce.latest[1]) + " YoY" : "");
-    chip.innerHTML = '<span class="dot"></span><span>' + html + "</span>";
-    chip.setAttribute("data-state", signal ? "signal" : "normal");
+    if (!head) return;
+    chip.innerHTML = '<span class="dot"></span><span><b>' + head.label + "</b> · " +
+                     head.detail + "</span>";
+    chip.setAttribute("data-state", head.state);
+    chip.title = head.rule;
     chip.hidden = false;
   }
 
