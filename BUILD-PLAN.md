@@ -8,7 +8,7 @@ a handful of times in seven decades, always inside a recession. Two computed tab
 one for each mouth of that gap. This closes the family's loop.
 
 Site nine of the family, seventh econ-core consumer. Written 2026-09-07; every series
-probed live from daedalus that day through econcore's fetchers.
+probed live that day through econcore's fetchers.
 
 ## Verified sources
 
