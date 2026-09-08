@@ -92,3 +92,31 @@ FRED as fallback (`FRED_API_KEY` in `.env`, gitignored).
 
 Assembled with Claude, made by Anthropic. Published surveys and published aggregates, with
 computed history and both rules printed. No forecasts.
+
+## Data and attribution
+
+The MIT licence covers this repository's code. It does not cover the data, which is not
+mine: every series belongs to the body that publishes it and carries that body's own terms.
+Each series names its `source` and `source_url` so the original is always one click away.
+
+**Restricted series.** The University of Michigan Surveys of Consumers (`UMCSENT`,
+`UMCSENT1`, `MICH`) is copyrighted: *Copyright, Surveys of Consumers, University of
+Michigan. Reprinted with permission.* FRED tags it **Copyrighted: Pre-Approval Required**,
+which permits non-commercial educational and personal use and asks that any other use be
+cleared with the University of Michigan directly.
+
+Other US series are works of the BEA and the Census Bureau, not subject to copyright.
+Canadian survey data comes from the Bank of Canada Valet API under its
+[terms of use](https://www.bankofcanada.ca/terms/).
+
+Statistics Canada data is used under the [Open Licence](https://www.statcan.gc.ca/en/reference/licence),
+which requires this acknowledgement: *Adapted from Statistics Canada, the tables and vectors
+named per series above. This does not constitute an endorsement by Statistics Canada of this
+product.*
+
+Recession bands come from econ-core: the US from the NBER chronology via FRED `USREC`,
+Canada from the C.D. Howe Institute Business Cycle Council chronology.
+
+Series reached through FRED are redistributed by the Federal Reserve Bank of St. Louis
+under [its terms of use](https://fred.stlouisfed.org/legal/), which ask that you cite the
+original source and note that it was accessed via FRED.
