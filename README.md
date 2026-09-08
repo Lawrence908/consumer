@@ -8,7 +8,7 @@ had already begun. This page computes both tables and prints both rules. Live at
 No framework, no build step, no package manager. Plain HTML, CSS and vanilla JS on an
 nginx front, with a stdlib-Python updater sidecar. Part of the economic tracker
 collection (diesel, debt, jobs, yield, housing, credit, lending, freight) on the shared
-[`econ-core`](../econ-core/CONTRACT.md) series contract.
+[`econ-core`](https://github.com/Lawrence908/econ-core/blob/main/CONTRACT.md) series contract.
 
 ## Layout
 
