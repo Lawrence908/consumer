@@ -4,32 +4,10 @@ networks:
     name: homelab-web
 
 services:
-  consumer:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        BUILD_TIME: ${BUILD_TIME:-unknown}
-    container_name: consumer
-    restart: unless-stopped
-    depends_on:
-      - consumer-updater
-    networks:
-      - web
-    ports:
-      - "8135:80"
-    volumes:
-      # Read-only here: nginx serves the data layer, the updater owns it.
-      - ./data:/usr/share/nginx/html/data:ro
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health || exit 1"]
-      interval: 30s
-      # This box runs a lot of containers; a build next door can push a
-      # trivial probe past a short deadline (learned on debt).
-      timeout: 15s
-      retries: 3
-      start_period: 15s
-
+  # The static front (consumer.chrislawrence.ca) is served by the shared econ
+  # container since 2026-11-14: see ../econ/compose.yaml. This repo runs
+  # only the updater; ./deploy.sh rebuilds it and then redeploys econ so
+  # edits to src/ go live too.
   consumer-updater:
     build:
       context: ./api
